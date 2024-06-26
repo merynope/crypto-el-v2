@@ -1,4 +1,4 @@
-# Quantum-Resistant Messaging
+# Quantum-Resistant Messaging 🔐
 
 ## Introduction
 
