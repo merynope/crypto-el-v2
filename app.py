@@ -66,7 +66,7 @@ if st.session_state.step == 0:
         st.session_state.step = 1
         st.experimental_rerun()
 
-# Phase 1: Authentication
+# Phase 1: Authentication Kyber1024 can be used instead of Kyber512
 if st.session_state.step >= 1:
     st.header("Phase 1: Authentication")
 
