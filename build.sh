@@ -1,36 +1,43 @@
 #!/bin/bash
+
 set -e
 
-# Install CMake locally (Render doesn't support sudo)
-mkdir -p $HOME/cmake
-cd $HOME/cmake
-curl -LO https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-linux-x86_64.tar.gz
-tar -xzf cmake-3.27.9-linux-x86_64.tar.gz
-export PATH=$HOME/cmake/cmake-3.27.9-linux-x86_64/bin:$PATH
-
-# Back to project root
-cd $RENDER_PROJECT_ROOT
+# Install system dependencies (Render doesn't have these by default)
+echo "🔧 Installing build dependencies..."
+apt-get update && apt-get install -y \
+    cmake \
+    build-essential \
+    git \
+    libssl-dev \
+    python3-dev \
+    curl
 
 # Clone and build liboqs
+echo "📥 Cloning liboqs..."
 git clone --recursive https://github.com/open-quantum-safe/liboqs.git
 cd liboqs
 mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local ..
+
+echo "🔨 Building liboqs with selective KEM support..."
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local \
+      -DOQS_USE_OPENSSL=OFF \
+      -DOQS_DIST_BUILD=ON \
+      -DOQS_ENABLE_KEM_BIKE=OFF \
+      -DOQS_ENABLE_KEM_FRODO=OFF \
+      -DOQS_ENABLE_SIG_PICNIC=OFF \
+      ..
+
 make -j$(nproc)
 make install
+
+# Set environment variables so the oqs-python package can find the shared library
+echo "🔧 Exporting OQS library path..."
+export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
+
 cd ../..
 
-# Set environment for oqs-python build
-export CMAKE_PREFIX_PATH=$HOME/.local
-export LIBRARY_PATH=$HOME/.local/lib
-export LD_LIBRARY_PATH=$HOME/.local/lib
-export CPATH=$HOME/.local/include
+# Optional: install oqs-python again now that the C lib is available
+echo "🐍 Reinstalling oqs-python..."
+pip install --force-reinstall oqs
 
-# Install liboqs-python
-git clone https://github.com/open-quantum-safe/liboqs-python.git
-cd liboqs-python
-python3 -m pip install .
-cd ..
-
-# Install other Python dependencies
-pip install -r requirements.txt
+echo "✅ Build script completed successfully."
