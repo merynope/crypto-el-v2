@@ -1,23 +1,30 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/bash
 
-echo "🚀 Installing system dependencies..."
-apt-get update && apt-get install -y cmake build-essential git
+set -e  # Exit immediately if a command fails
 
-echo "📦 Cloning and building liboqs..."
-git clone --depth=1 https://github.com/open-quantum-safe/liboqs
-cmake -S liboqs -B liboqs/build -DBUILD_SHARED_LIBS=ON
-cmake --build liboqs/build --target install
+# Variables
+INSTALL_PREFIX="$HOME/.local"
 
-echo "🐍 Setting up liboqs environment..."
-export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-export OQS_INSTALL_PATH=/usr/local
+# Step 1: Clone and build liboqs
+git clone --recursive https://github.com/open-quantum-safe/liboqs.git
+cd liboqs
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX ..
+make -j$(nproc)
+make install
+cd ../..
 
-echo "📥 Installing Python dependencies..."
-pip install --upgrade pip
+# Step 2: Set environment variables so liboqs-python can find liboqs
+export CMAKE_PREFIX_PATH=$INSTALL_PREFIX
+export LIBRARY_PATH=$INSTALL_PREFIX/lib
+export LD_LIBRARY_PATH=$INSTALL_PREFIX/lib
+export CPATH=$INSTALL_PREFIX/include
+
+# Step 3: Install liboqs-python
+git clone https://github.com/open-quantum-safe/liboqs-python.git
+cd liboqs-python
+python3 -m pip install .
+cd ..
+
+# Step 4: Install remaining Python dependencies
 pip install -r requirements.txt
-
-echo "🔐 Installing liboqs-python from GitHub..."
-pip install git+https://github.com/open-quantum-safe/liboqs-python
-
-echo "✅ Build complete!"
