@@ -2,6 +2,6 @@ services:
   - type: web
     name: crypto-el-v2
     env: python
-    buildCommand: "pip install -r requirements.txt"
+    buildCommand: "./build.sh"
     startCommand: "streamlit run app.py"
     plan: free
