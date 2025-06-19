@@ -2,7 +2,7 @@
 
 set -e
 
-# Install system dependencies (Render doesn't have these by default)
+# 1. Install dependencies
 echo "🔧 Installing build dependencies..."
 apt-get update && apt-get install -y \
     cmake \
@@ -12,7 +12,7 @@ apt-get update && apt-get install -y \
     python3-dev \
     curl
 
-# Clone and build liboqs
+# 2. Clone and build liboqs
 echo "📥 Cloning liboqs..."
 git clone --recursive https://github.com/open-quantum-safe/liboqs.git
 cd liboqs
@@ -29,15 +29,18 @@ cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local \
 
 make -j$(nproc)
 make install
+cd ../..
 
-# Set environment variables so the oqs-python package can find the shared library
+# 3. Set env var so oqs-python finds the lib
 echo "🔧 Exporting OQS library path..."
 export LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
 
-cd ../..
+# 4. Install Python dependencies
+echo "🐍 Installing Python dependencies..."
+pip install --upgrade pip
+pip install -r requirements.txt
 
-# Optional: install oqs-python again now that the C lib is available
-echo "🐍 Reinstalling oqs-python..."
+# 5. Install oqs-python again so it finds the compiled C library
 pip install --force-reinstall oqs
 
-echo "✅ Build script completed successfully."
+echo "✅ Build complete."
