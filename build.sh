@@ -1,30 +1,36 @@
 #!/bin/bash
+set -e
 
-set -e  # Exit immediately if a command fails
+# Install CMake locally (Render doesn't support sudo)
+mkdir -p $HOME/cmake
+cd $HOME/cmake
+curl -LO https://github.com/Kitware/CMake/releases/download/v3.27.9/cmake-3.27.9-linux-x86_64.tar.gz
+tar -xzf cmake-3.27.9-linux-x86_64.tar.gz
+export PATH=$HOME/cmake/cmake-3.27.9-linux-x86_64/bin:$PATH
 
-# Variables
-INSTALL_PREFIX="$HOME/.local"
+# Back to project root
+cd $RENDER_PROJECT_ROOT
 
-# Step 1: Clone and build liboqs
+# Clone and build liboqs
 git clone --recursive https://github.com/open-quantum-safe/liboqs.git
 cd liboqs
 mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_PREFIX ..
+cmake -DCMAKE_INSTALL_PREFIX=$HOME/.local ..
 make -j$(nproc)
 make install
 cd ../..
 
-# Step 2: Set environment variables so liboqs-python can find liboqs
-export CMAKE_PREFIX_PATH=$INSTALL_PREFIX
-export LIBRARY_PATH=$INSTALL_PREFIX/lib
-export LD_LIBRARY_PATH=$INSTALL_PREFIX/lib
-export CPATH=$INSTALL_PREFIX/include
+# Set environment for oqs-python build
+export CMAKE_PREFIX_PATH=$HOME/.local
+export LIBRARY_PATH=$HOME/.local/lib
+export LD_LIBRARY_PATH=$HOME/.local/lib
+export CPATH=$HOME/.local/include
 
-# Step 3: Install liboqs-python
+# Install liboqs-python
 git clone https://github.com/open-quantum-safe/liboqs-python.git
 cd liboqs-python
 python3 -m pip install .
 cd ..
 
-# Step 4: Install remaining Python dependencies
+# Install other Python dependencies
 pip install -r requirements.txt
